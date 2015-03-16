@@ -9,7 +9,7 @@ all: build
 
 build: .build
 
-.build: requirements.test.txt
+.build: setup.py requirements.txt requirements.test.txt
 	python setup.py install
 	pip install -r requirements.test.txt
 	touch .build
