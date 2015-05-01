@@ -28,7 +28,7 @@ integration: build
 pack: kingpin.zip
 	@python kingpin.zip --help 2>&1 >/dev/null && echo Success || echo Fail
 
-kingpin.zip:
+kingpin.zip: $(shell find ./kingpin -type f)
 	rm -rf zip
 	mkdir -p zip
 	pip install --process-dependency-links --target ./zip ./
