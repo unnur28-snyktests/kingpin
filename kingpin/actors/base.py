@@ -230,7 +230,11 @@ class BaseActor(object):
             # Unicode is not a `str` but it is a `basestring`
             # Cast the passed value explicitly as a string
             if isinstance(value, basestring):
-                value = str(value)
+                try:
+                    value = str(value)
+                except Exception as e:
+                    self.log.critical('Failed to parse %s' % value)
+                    raise exceptions.InvalidOptions(e)
 
             # If the expected_type has an attribute 'valid', then verify that
             # the option passed in is one of those valid options.
