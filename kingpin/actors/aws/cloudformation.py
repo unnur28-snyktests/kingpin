@@ -456,7 +456,7 @@ class CloudFormationBaseActor(base.AWSBaseActor):
     def _create_stack(self, stack):
         """Executes the stack creation."""
         # Create the stack, and get its ID.
-        self.log.info('Creating stack %s' % stack)
+        self.log.info('NEHAL - Creating stack %s' % stack)
 
         cfg = dict()
         if self._template_body:
@@ -466,6 +466,11 @@ class CloudFormationBaseActor(base.AWSBaseActor):
 
         if self.option('role_arn'):
             cfg['RoleARN'] = self.option('role_arn')
+
+        import sys, traceback
+        print("NEHAL")
+        print(self.option('enable_termination_protection'))
+        traceback.print_stack()
 
         try:
             stack = yield self.thread(
