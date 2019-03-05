@@ -10,6 +10,7 @@ from kingpin.actors.aws import base
 from kingpin.actors.aws import settings
 from kingpin.actors.aws import cloudformation
 from kingpin.actors.test.helper import tornado_value
+import importlib
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ class TestCloudFormationBaseActor(testing.AsyncTestCase):
         settings.AWS_ACCESS_KEY_ID = 'unit-test'
         settings.AWS_SECRET_ACCESS_KEY = 'unit-test'
         settings.RETRYING_SETTINGS = {'stop_max_attempt_number': 1}
-        reload(cloudformation)
+        importlib.reload(cloudformation)
 
         self.actor = cloudformation.CloudFormationBaseActor(
             'unittest', {'region': 'us-east-1'})
@@ -69,7 +70,7 @@ class TestCloudFormationBaseActor(testing.AsyncTestCase):
         file = 'examples/test/aws.cloudformation/cf.integration.json'
         (body, url) = self.actor._get_template_body(file)
         ret = self.actor._discover_noecho_params(body)
-        self.assertEquals(ret, ['BucketPassword'])
+        self.assertEqual(ret, ['BucketPassword'])
 
     def test_get_template_body(self):
         file = 'examples/test/aws.cloudformation/cf.unittest.json'
@@ -78,17 +79,17 @@ class TestCloudFormationBaseActor(testing.AsyncTestCase):
         # Should work...
         ret = self.actor._get_template_body(file)
         expected = ('{"blank": "json"}', None)
-        self.assertEquals(ret, expected)
+        self.assertEqual(ret, expected)
 
         # Should return None
         ret = self.actor._get_template_body(None)
         expected = (None, None)
-        self.assertEquals(ret, expected)
+        self.assertEqual(ret, expected)
 
         # Should return None
         ret = self.actor._get_template_body(url)
         expected = (None, 'http://foobar.json')
-        self.assertEquals(ret, expected)
+        self.assertEqual(ret, expected)
 
         # Should raise exception
         with self.assertRaises(cloudformation.InvalidTemplate):
@@ -145,7 +146,7 @@ class TestCloudFormationBaseActor(testing.AsyncTestCase):
             'unittest', {'region': 'us-east-1'})
 
         ret = actor._create_parameters(params)
-        self.assertEquals(ret, expected)
+        self.assertEqual(ret, expected)
 
     @testing.gen_test
     def test_get_stack(self):
@@ -153,7 +154,7 @@ class TestCloudFormationBaseActor(testing.AsyncTestCase):
             'Stacks': [create_fake_stack('s1', 'UPDATE_COMPLETE')]}
 
         ret = yield self.actor._get_stack('s1')
-        self.assertEquals(ret['StackName'], 's1')
+        self.assertEqual(ret['StackName'], 's1')
 
     @testing.gen_test
     def test_get_stack_not_found(self):
@@ -172,7 +173,7 @@ class TestCloudFormationBaseActor(testing.AsyncTestCase):
             fake_exc, 'Failure')
 
         ret = yield self.actor._get_stack('s1')
-        self.assertEquals(ret, None)
+        self.assertEqual(ret, None)
 
     @testing.gen_test
     def test_get_stack_exc(self):
@@ -208,7 +209,7 @@ class TestCloudFormationBaseActor(testing.AsyncTestCase):
         ret = yield self.actor._get_stack_template('test')
         self.actor.cf3_conn.get_template.assert_has_calls(
             [mock.call(StackName='test', TemplateStage='Original')])
-        self.assertEquals(ret, {'Fake': 'Stack'})
+        self.assertEqual(ret, {'Fake': 'Stack'})
 
     @testing.gen_test
     def test_get_stack_template_exc(self):
@@ -296,7 +297,7 @@ class TestCloudFormationBaseActor(testing.AsyncTestCase):
         self.actor.cf3_conn.describe_stack_events.return_value = fake_events
         ret = yield self.actor._get_stack_events('test')
 
-        self.assertEquals(ret, expected)
+        self.assertEqual(ret, expected)
 
     @testing.gen_test
     def test_get_stack_events_exc(self):
@@ -314,7 +315,7 @@ class TestCloudFormationBaseActor(testing.AsyncTestCase):
         self.actor.cf3_conn.describe_stack_events.side_effect = ClientError(
             fake_exc, 'Failure')
         ret = yield self.actor._get_stack_events('test')
-        self.assertEquals(ret, [])
+        self.assertEqual(ret, [])
 
     @testing.gen_test
     def test_delete_stack(self):
@@ -359,7 +360,7 @@ class TestCreate(testing.AsyncTestCase):
         settings.AWS_ACCESS_KEY_ID = 'unit-test'
         settings.AWS_SECRET_ACCESS_KEY = 'unit-test'
         settings.RETRYING_SETTINGS = {'stop_max_attempt_number': 1}
-        reload(cloudformation)
+        importlib.reload(cloudformation)
         # Need to recreate the api call queues between tests
         # because nose creates a new ioloop per test run.
         base.NAMED_API_CALL_QUEUES = {}
@@ -377,7 +378,7 @@ class TestCreate(testing.AsyncTestCase):
         actor.cf3_conn.create_stack = mock.MagicMock(name='create_stack_mock')
         actor.cf3_conn.create_stack.return_value = {'StackId': 'arn:123'}
         ret = yield actor._create_stack(stack='test')
-        self.assertEquals(ret, 'arn:123')
+        self.assertEqual(ret, 'arn:123')
 
     @testing.gen_test
     def test_create_stack_file_with_role(self):
@@ -393,12 +394,12 @@ class TestCreate(testing.AsyncTestCase):
         actor.cf3_conn.create_stack = mock.MagicMock(name='create_stack_mock')
         actor.cf3_conn.create_stack.return_value = {'StackId': 'arn:123'}
         ret = yield actor._create_stack(stack='test')
-        self.assertEquals(ret, 'arn:123')
+        self.assertEqual(ret, 'arn:123')
         actor.cf3_conn.create_stack.assert_called_with(
             TemplateBody=mock.ANY,
             EnableTerminationProtection=False,
             Parameters=[],
-            RoleARN=u'test_role_arn',
+            RoleARN='test_role_arn',
             TimeoutInMinutes=60,
             Capabilities=[],
             StackName='test',
@@ -419,12 +420,12 @@ class TestCreate(testing.AsyncTestCase):
         actor.cf3_conn.create_stack = mock.MagicMock(name='create_stack_mock')
         actor.cf3_conn.create_stack.return_value = {'StackId': 'arn:123'}
         ret = yield actor._create_stack(stack='test')
-        self.assertEquals(ret, 'arn:123')
+        self.assertEqual(ret, 'arn:123')
         actor.cf3_conn.create_stack.assert_called_with(
             TemplateBody=mock.ANY,
             EnableTerminationProtection=True,
             Parameters=[],
-            RoleARN=u'test_role_arn',
+            RoleARN='test_role_arn',
             TimeoutInMinutes=60,
             Capabilities=[],
             StackName='test',
@@ -442,7 +443,7 @@ class TestCreate(testing.AsyncTestCase):
         actor.cf3_conn.create_stack = mock.MagicMock(name='create_stack_mock')
         actor.cf3_conn.create_stack.return_value = {'StackId': 'arn:123'}
         ret = yield actor._create_stack(stack='unit-test-cf')
-        self.assertEquals(ret, 'arn:123')
+        self.assertEqual(ret, 'arn:123')
 
     @testing.gen_test
     def test_create_stack_raises_boto_error(self):
@@ -558,7 +559,7 @@ class TestDelete(testing.AsyncTestCase):
         settings.AWS_ACCESS_KEY_ID = 'unit-test'
         settings.AWS_SECRET_ACCESS_KEY = 'unit-test'
         settings.RETRYING_SETTINGS = {'stop_max_attempt_number': 1}
-        reload(cloudformation)
+        importlib.reload(cloudformation)
         # Need to recreate the api call queues between tests
         # because nose creates a new ioloop per test run.
         base.NAMED_API_CALL_QUEUES = {}
@@ -606,7 +607,7 @@ class TestStack(testing.AsyncTestCase):
         settings.AWS_ACCESS_KEY_ID = 'unit-test'
         settings.AWS_SECRET_ACCESS_KEY = 'unit-test'
         settings.RETRYING_SETTINGS = {'stop_max_attempt_number': 1}
-        reload(cloudformation)
+        importlib.reload(cloudformation)
         # Need to recreate the api call queues between tests
         # because nose creates a new ioloop per test run.
         base.NAMED_API_CALL_QUEUES = {}
@@ -652,7 +653,7 @@ class TestStack(testing.AsyncTestCase):
             {'ParameterKey': 'Metadata', 'ParameterValue': '1.0'}
         ]
         ret = self.actor._diff_params_safely(remote, self.actor._parameters)
-        self.assertEquals(False, ret)
+        self.assertEqual(False, ret)
 
         # Now pretend that the Metadata is different ... Should return True
         # indicating that the lists are different.
@@ -662,7 +663,7 @@ class TestStack(testing.AsyncTestCase):
             {'ParameterKey': 'Metadata', 'ParameterValue': '2.0'}
         ]
         ret = self.actor._diff_params_safely(remote, self.actor._parameters)
-        self.assertEquals(True, ret)
+        self.assertEqual(True, ret)
 
         # Now try updating the parameter with a default and
         # pretend the remote had a different value. Should return True.
@@ -677,7 +678,7 @@ class TestStack(testing.AsyncTestCase):
              'ParameterValue': 'EntirelyDifferentValue'},
         ]
         ret = self.actor._diff_params_safely(remote, self.actor._parameters)
-        self.assertEquals(True, ret)
+        self.assertEqual(True, ret)
 
         # Now try updating the parameter with a default and
         # pretend the remote had the default value. Should still return True.
@@ -692,7 +693,7 @@ class TestStack(testing.AsyncTestCase):
              'ParameterValue': 'DefaultValue'},
         ]
         ret = self.actor._diff_params_safely(remote, self.actor._parameters)
-        self.assertEquals(True, ret)
+        self.assertEqual(True, ret)
 
     @testing.gen_test
     def test_update_stack_in_failed_state(self):
@@ -814,7 +815,7 @@ class TestStack(testing.AsyncTestCase):
         self.actor._template_url = 'http://fakeurl.com'
         fake_stack = create_fake_stack('fake', 'CREATE_COMPLETE')
         ret = yield self.actor._ensure_template(fake_stack)
-        self.assertEquals(None, ret)
+        self.assertEqual(None, ret)
 
     @testing.gen_test
     def test_ensure_template_no_diff(self):
@@ -831,7 +832,7 @@ class TestStack(testing.AsyncTestCase):
         self.actor._get_stack_template.return_value = tornado_value(template)
 
         ret = yield self.actor._ensure_template(fake_stack)
-        self.assertEquals(None, ret)
+        self.assertEqual(None, ret)
 
         self.assertFalse(self.actor._create_change_set.called)
         self.assertFalse(self.actor._wait_until_change_set_ready.called)
@@ -866,7 +867,7 @@ class TestStack(testing.AsyncTestCase):
         # We run three tests in here because the setup takes so many lines
         # (above). First test is a normal execution with changes detected.
         ret = yield self.actor._ensure_template(fake_stack)
-        self.assertEquals(None, ret)
+        self.assertEqual(None, ret)
         self.actor._create_change_set.assert_has_calls(
             [mock.call(fake_stack)])
         self.actor._wait_until_change_set_ready.assert_has_calls(
@@ -922,7 +923,7 @@ class TestStack(testing.AsyncTestCase):
         self.actor.cf3_conn.create_change_set.return_value = {'Id': 'abcd'}
         fake_stack = create_fake_stack('fake', 'CREATE_COMPLETE')
         ret = yield self.actor._create_change_set(fake_stack, 'uuid')
-        self.assertEquals(ret, {'Id': 'abcd'})
+        self.assertEqual(ret, {'Id': 'abcd'})
         self.actor.cf3_conn.create_change_set.assert_has_calls(
             [mock.call(
                 StackName='arn:aws:cloudformation:us-east-1:xxxx:stack/fake/x',
@@ -941,7 +942,7 @@ class TestStack(testing.AsyncTestCase):
         fake_stack = create_fake_stack('fake', 'CREATE_COMPLETE')
         self.actor._options['role_arn'] = 'test_role_arn'
         ret = yield self.actor._create_change_set(fake_stack, 'uuid')
-        self.assertEquals(ret, {'Id': 'abcd'})
+        self.assertEqual(ret, {'Id': 'abcd'})
         self.actor.cf3_conn.create_change_set.assert_has_calls(
             [mock.call(
                 StackName='arn:aws:cloudformation:us-east-1:xxxx:stack/fake/x',
@@ -962,7 +963,7 @@ class TestStack(testing.AsyncTestCase):
         self.actor._template_url = 'http://foobar.bin'
         fake_stack = create_fake_stack('fake', 'CREATE_COMPLETE')
         ret = yield self.actor._create_change_set(fake_stack, 'uuid')
-        self.assertEquals(ret, {'Id': 'abcd'})
+        self.assertEqual(ret, {'Id': 'abcd'})
         self.actor.cf3_conn.create_change_set.assert_has_calls(
             [mock.call(
                 StackName='arn:aws:cloudformation:us-east-1:xxxx:stack/fake/x',
