@@ -7,4 +7,4 @@ Sphinx==1.6.3
 sphinx_rtd_theme==0.4.3
 
 # https://github.com/Julian/jsonschema/issues/449#issuecomment-411273412
-attrs==3.0.1
+attrs==19.1.0

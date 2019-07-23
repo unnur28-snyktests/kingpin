@@ -34,8 +34,6 @@ python-rightscale @ https://github.com/Nextdoor/python-rightscale-1/tarball/pyth
 mock==1.0.1
 
 # kingpin.actors.aws
-boto==2.49.0
-
 # kingpin.actors.aws.ecs
 # kingpin.actors.aws.cloudformation
 boto3==1.9.194

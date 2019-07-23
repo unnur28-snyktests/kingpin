@@ -51,6 +51,5 @@ venv: .venv3/bin/activate
 .venv3/bin/activate: requirements.test.txt requirements.txt
 	@echo "Building .venv3 virtual environment..."
 	@test -d .venv3 || python3 -m venv .venv3 && .venv3/bin/pip3 install pip --upgrade
-	@.venv3/bin/pip3 install -r requirements.test.txt
-	@.venv3/bin/pip3 install -r requirements.txt
+	@.venv3/bin/pip3 install -r requirements.txt -r requirements.test.txt
 	@touch .venv3/bin/activate
