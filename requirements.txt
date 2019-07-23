@@ -1,30 +1,29 @@
 # General App Requirements
 
 # Py3 Compat
-six
+six==1.12.0
 
-# 4.1+ is required for the @gen.with_timeout decorator.
-# http://tornado.readthedocs.org/en/latest/gen.html#tornado.gen.with_timeout
-tornado>=4.1,<6.0
+# Asynchronous framework
+tornado==5.1.1
 
 # Our custom rest client
-tornado_rest_client>=0.0.4
+tornado_rest_client==0.0.4
 
 # Used to make synchronous tasks asynchronous
-futures
+futures==3.1.1
 
 # Used to parse out the JSON and validate its format.
-simplejson
-jsonschema
-jsonpickle
-demjson
-PyYAML
+simplejson==3.16.0
+jsonschema==3.0.1
+jsonpickle==1.2
+demjson==2.2.4
+PyYAML==5.1.1
 
 # Colorize the log output!
-rainbow_logging_handler
+rainbow_logging_handler==2.2.2
 
 # Used for retrying non-asynchronous methods
-retrying
+retrying==1.3.3
 
 # kingpin.actors.rightscale
 #
@@ -35,11 +34,11 @@ python-rightscale @ https://github.com/Nextdoor/python-rightscale-1/tarball/pyth
 mock==1.0.1
 
 # kingpin.actors.aws
-boto>=2.32.1
+boto==2.49.0
 
 # kingpin.actors.aws.ecs
 # kingpin.actors.aws.cloudformation
-boto3>=1.9.46
+boto3==1.9.194
 
 # Used to turn snake_case into CamelCase
-inflection
+inflection==0.3.1
