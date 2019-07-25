@@ -37,6 +37,7 @@ mock==1.0.1
 # kingpin.actors.aws.ecs
 # kingpin.actors.aws.cloudformation
 boto3==1.9.194
+ec2-metadata==2.0.0
 
 # Used to turn snake_case into CamelCase
 inflection==0.3.1

@@ -37,15 +37,14 @@ import logging
 import urllib.request, urllib.parse, urllib.error
 import re
 
-from boto import exception as boto_exception
-from boto import utils as boto_utils
 from boto3 import exceptions as boto3_exceptions
 from botocore import exceptions as botocore_exceptions
+from ec2_metadata import ec2_metadata
+from requests import exceptions as requests_exceptions
 from retrying import retry
 from tornado import concurrent
 from tornado import gen
 from tornado import ioloop
-import boto.cloudformation
 import boto.ec2
 import boto.ec2.elb
 import boto.iam
@@ -192,8 +191,7 @@ class AWSBaseActor(base.BaseActor):
         """
         try:
             return api_function(*args, **kwargs)
-        except (boto_exception.BotoServerError,
-                boto3_exceptions.Boto3Error) as e:
+        except boto3_exceptions.Boto3Error as e:
             raise self._wrap_boto_exception(e)
 
     @gen.coroutine
@@ -226,14 +224,13 @@ class AWSBaseActor(base.BaseActor):
         queue = NAMED_API_CALL_QUEUES[queue_name]
         try:
             result = yield queue.call(api_function, *args, **kwargs)
-        except (boto_exception.BotoServerError,
-                boto3_exceptions.Boto3Error) as e:
+        except boto3_exceptions.Boto3Error as e:
             raise self._wrap_boto_exception(e)
         else:
             raise gen.Return(result)
 
     def _wrap_boto_exception(self, e):
-        if isinstance(e, boto_exception.BotoServerError):
+        if isinstance(e, botocore_exceptions.ClientError):
             # If we're using temporary IAM credentials, when those expire we
             # can get back a blank 400 from Amazon. This is confusing, but it
             # happens because of https://github.com/boto/boto/issues/898. In
@@ -242,9 +239,9 @@ class AWSBaseActor(base.BaseActor):
             # Instance Profile role), so thats what Boto tries to do. However,
             # if you're using short-term creds (say from SAML auth'd logins),
             # then this fails and Boto returns a blank 400.
-            if (e.status == 400 and
-                    e.reason == 'Bad Request' and
-                    e.error_code is None):
+            if (e.response['ResponseMetadata']['HTTPStatusCode'] == 400 and
+                    e.response['Error']['Message'] == 'Bad Request' and
+                    e.response['Error']['Code'] is None):
                 msg = 'Access credentials have expired'
                 return exceptions.InvalidCredentials(msg)
 
@@ -276,11 +273,11 @@ class AWSBaseActor(base.BaseActor):
         try:
             elbs = yield self.api_call(self.elb_conn.get_all_load_balancers,
                                        load_balancer_names=name)
-        except boto_exception.BotoServerError as e:
+        except botocore_exceptions.ClientError as e:
             msg = '%s: %s' % (e.error_code, e.message)
             log.error('Received exception: %s' % msg)
 
-            if e.status == 400:
+            if e.response['ResponseMetadata']['HTTPStatusCode'] == 400:
                 raise ELBNotFound(msg)
 
             raise
@@ -331,7 +328,16 @@ class AWSBaseActor(base.BaseActor):
         ec2-instance-metadata.html
         """
 
-        meta = yield self.api_call(boto_utils.get_instance_metadata,
+        def cache_ec2_metadata():
+            try:
+                # ec2_metadata lazy-loads, lookup region to cache all the keys
+                getattr(ec2_metadata, "region")
+            except requests_exceptions.ConnectTimeout:
+                return None
+            
+            return ec2_metadata
+        
+        meta = yield self.api_call(cache_ec2_metadata,
                                    timeout=1, num_retries=2)
         if not meta:
             raise InvalidMetaData('No metadata available. Not AWS instance?')
